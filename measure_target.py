@@ -15,21 +15,19 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
 from requests.packages.urllib3.util import ssl_
 
-TARGET_USERNAME='username'
-TARGET_PASSWORD='username'
-
-HOST = "FQDN"
-TARGET_URL="TARGET_URL"
-TAG  = "LISTENER"
-MEASUREMENTS1 ='MEASUREMENTS.rrd'
-MEASUREMENTS2 ='MEASUREMENTS.json'
-
-CIPHERS = (  \
-            'TLS_AES_256_GCM_SHA384:' \
-            'TLS_AES_128_GCM_SHA256:' \
-            'ECDHE-RSA-AES256-GCM-SHA384:' \
-            'ECDHE-RSA-AES128-GCM-SHA256'
-           )
+TARGET_USERNAME = 'username'
+TARGET_PASSWORD = 'username'
+HOST            = 'FQDN'
+TARGET_URL      = 'TARGET_URL'
+TAG             = 'LISTENER'
+MEASUREMENTS1   = 'MEASUREMENTS.rrd'
+MEASUREMENTS2   = 'MEASUREMENTS.json'
+CIPHERS         = (  \
+                   'TLS_AES_256_GCM_SHA384:' \
+                   'TLS_AES_128_GCM_SHA256:' \
+                   'ECDHE-RSA-AES256-GCM-SHA384:' \
+                   'ECDHE-RSA-AES128-GCM-SHA256'
+                  )
 
 class Tls13Adapter(HTTPAdapter):
     """
