@@ -67,8 +67,6 @@ t_opened = time.time()
 
 if resp.status_code == 200:
     print('success connecting')
-    #print(URL)
-    #print(resp.headers)
     print(resp.content.decode('utf-8'))
 else:
     print(req)
