@@ -19,6 +19,7 @@ TARGET_USERNAME='username'
 TARGET_PASSWORD='username'
 
 HOST = "FQDN"
+TARGET_URL="TARGET_URL"
 TAG  = "LISTENER"
 MEASUREMENTS1 ='MEASUREMENTS.rrd'
 MEASUREMENTS2 ='MEASUREMENTS.json'
@@ -94,7 +95,7 @@ if resp.status_code == 200:
             foundlogouturl=True
             logouturl = line.split('"')
             logouturl = logouturl[1].strip()
-            if logouturl.startswith('https://rod-emms-vpn.maximo.com'):
+            if logouturl.startswith(TARGET_URL):
                 t_loggingout = time.time()
                 resp = ses.request( 'GET', logouturl)
                 t_loggedout = time.time()
@@ -117,7 +118,7 @@ if resp.status_code == 200:
         t_loggedin = t_loggingin  + 99999
         print(myfaillist)
         print(myfaillist["value"])
-        logouturl = 'https://' +HOST + '/maximo_aw' + myfaillist["value"]
+        logouturl = 'https://' +HOST + '/' + TAG + myfaillist["value"]
         print('trying harder with ' + logouturl)
         t_loggingout = time.time()
         resp = ses.request( 'GET', logouturl)
