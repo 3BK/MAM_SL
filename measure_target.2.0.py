@@ -94,7 +94,7 @@ try:
     body =driver.find_element(By.TAG_NAME, 'body').text
 
     if 'Login Error' in body:
-      print('Login Error')
+      print(body)
       returnbutton = driver.find_element(By.XPATH, "//button[text()= 'Return']")
       returnbutton.click()
     else:
