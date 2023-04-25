@@ -1,6 +1,7 @@
 # measure_target.2.0.py
 Expected result
-##Failure
+
+## Failure
 $ ./measure_target.2.0.py
 Login Error
 
