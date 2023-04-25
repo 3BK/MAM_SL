@@ -5,6 +5,8 @@ Expected result
 ```
 $ ./measure_target.2.0.py
 Login Error
+The LTPA token that is used to login is invalid. LTPA tokens are used for the login process when WebSphere Application Server Security is enabled. Wait a few seconds and then try again to log in. If the problem persists, clear your browser cookies or restart the browser.
+Return
 ```
 
 ## Success
