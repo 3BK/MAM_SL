@@ -4,7 +4,7 @@ Expected result
 ## Failure
 ```
 $ ./measure_target.2.0.py
- Login Error
+Login Error
 ```
 
 ## Success
