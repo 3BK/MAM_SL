@@ -1,16 +1,8 @@
-# measure_target.2.0.py
-Expected result
+# scan.target.py
 
-## Failure
+## Expected result
 ```
-$ ./measure_target.2.0.py
-Login Error
-The LTPA token that is used to login is invalid. LTPA tokens are used for the login process when WebSphere Application Server Security is enabled. Wait a few seconds and then try again to log in. If the problem persists, clear your browser cookies or restart the browser.
-Return
-```
-
-## Success
-```
-$ measure_target.2.0.py
-open (0.5806760787963867); login (1.434309482574463); logout (0.6135632991790771); total (2.680819034576416)
+====== WebDriver manager ======
+Driver [.../chromedriver] found in cache
+{'topic': 'frontend-latency', 'tagunits': 'Phase', 'units': 'msec', '_records': [{'tag': 'rod-emms-vpn.open', 'measure': '856'}, {'tag': 'rod-emms-vpn.loggingin', 'measure': '1568'}, {'tag': 'rod-emms-vpn.loggingout', 'measure': '633'}, {'tag': 'rod-emms-vpn.total', 'measure': '3099'}]}
 ```
