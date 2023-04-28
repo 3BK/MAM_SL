@@ -1,5 +1,5 @@
 # scan.target.py
-The purpose of scan.target is to scan a Maximo target using Python3, Selenium and Chrometo produce a json measurement file for a timeseries database such as influxdb or equivalent.
+The purpose of scan.target is to scan a Maximo target using Python3, Selenium and Chrome to produce a json measurement file for a timeseries database such as influxdb or equivalent.
 
 ## Expected result
 ```
