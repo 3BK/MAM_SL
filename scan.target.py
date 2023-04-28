@@ -46,6 +46,78 @@ def bk_debug(driver):
     print (my_ii.get_attribute('id'))
   return
 
+
+def try_to_login(driver, my_stats):
+    am_i_logged_in = False
+    now = datetime.now()
+    now_d = now.strftime("%Y%m%d")
+    try:
+        t_username = ''
+        t_token    = ''
+        t_url      = ''
+        with open('./target_username') as fd:
+            t_username = fd.read().rstrip()
+        with open('./target_url') as fd:
+            t_url = fd.read().rstrip()
+        domain_info = tldextract.extract(t_url)
+        with open('./target_token') as fd:
+            t_token = base64.b64decode(fd.read()).decode("utf-8").rstrip()
+
+        my_stats['opening'] = time.time()
+        for i in range(8):
+            driver.delete_all_cookies()
+            driver.get(t_url)
+            WebDriverWait(driver, 10).until(lambda x: ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title)
+            my_stats['opened'] = time.time()
+            assert ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title
+            username = driver.find_element(By.ID, "j_username")
+            password = driver.find_element(By.ID, "j_password")
+            loginbutton = driver.find_element(By.ID, "loginbutton")
+            my_stats['loggingin'] = time.time()
+
+            username.send_keys(t_username)
+            password.send_keys("")
+            password.send_keys(t_token)
+            loginbutton.click()
+
+            WebDriverWait(driver, 30).until(lambda x: any(t in x.title for t in ['Start Center', 'IBM']))
+
+            if ("IBM") in driver.title:
+              body =driver.find_element(By.TAG_NAME, 'body').text
+              if 'Login Error' in body:
+                #print('LTPA error')
+                returnbutton = driver.find_element(By.XPATH, "//button[text()= 'Return']")
+                my_stats['loggingout'] = time.time()
+                t_loggingout = time.time()
+                returnbutton.click()
+                WebDriverWait(driver, 10).until(lambda x: ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title)
+                my_stats['loggedout'] = time.time()
+                #print('loggedout')
+
+              else:
+                content = driver.find_element(By.CLASS_NAME,'messageDesc').text
+                print(driver.title)
+                #print(content)
+
+            if ("Start Center") in driver.title:
+                #print('loggedin')
+                my_stats['loggedin'] = time.time()
+                am_i_logged_in = True
+                break
+
+            time.sleep(1)
+
+        return am_i_logged_in
+
+    except:
+        log_file = open("../audit/exception."+now_d+".log","a")
+        sys.stdout = log_file
+        print("%s" % (time.time()), flush=True)
+        print("Unexpected error: %s" % ( sys.exc_info()[0]), flush=True)
+        log_file.close()
+        raise
+
+
 now = datetime.now()
 now_d = now.strftime("%Y%m%d")
 
@@ -53,7 +125,7 @@ capabilities = DesiredCapabilities.CHROME
 capabilities['goog:loggingPrefs'] = {'performance': 'ALL'}
 
 logger = logging.getLogger("custom_logger")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 logger.addHandler(logging.StreamHandler())
 logger.addHandler(logging.FileHandler("../audit/custom."+now_d+".log"))
 set_logger(logger)
@@ -78,92 +150,60 @@ service=ChromeService(executable_path=ChromeDriverManager(path=r'./Drivers/').in
 
 driver = webdriver.Chrome( service=service ,options=options)
 
+#print(driver.get_cookies())
+#driver.delete_all_cookies()
+
 measurements = {'topic':'frontend-latency', 'tagunits':'Phase', 'units':'msec', '_records' : []}
-try:
-  t_username = ''
-  t_token    = ''
-  t_url      = ''
-  with open('./target_username') as fd:
-      t_username = fd.read().rstrip()
-  with open('./target_url') as fd:
-      t_url = fd.read().rstrip()
-  with open('./target_token') as fd:
-      t_token = base64.b64decode(fd.read()).decode("utf-8").rstrip()
-  domain_info = tldextract.extract(t_url)
+my_stats = {}
+if True == try_to_login(driver, my_stats):
+    #print('success')
+    try:
+      with open('./target_url') as fd:
+          t_url = fd.read().rstrip()
+      domain_info = tldextract.extract(t_url)
 
-  t_opening = time.time()
-  driver.get(t_url)
-  WebDriverWait(driver, 10).until(lambda x: ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title)
-  t_opened = time.time()
-  assert ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title
-  username = driver.find_element(By.ID, "j_username")
-  password = driver.find_element(By.ID, "j_password")
-  loginbutton = driver.find_element(By.ID, "loginbutton")
-  t_loggingin = time.time()
-  username.send_keys(t_username)
+      if ("Start Center") in driver.title:
+        my_stats['loggedin'] = time.time()
+        assert "Start Center" in driver.title
+        logoutbutton = driver.find_element(By.ID, 'titlebar_hyperlink_8-lbsignout')
+        my_stats['loggingout'] = time.time()
+        logoutbutton.click()
 
-  password.send_keys("")
-  password.send_keys(t_token)
-  loginbutton.click()
+        WebDriverWait(driver, 30).until(lambda x: any(t in x.title for t in ['IBM']))
 
-  WebDriverWait(driver, 30).until(lambda x: any(t in x.title for t in ['Start Center', 'IBM']))
+        body =driver.find_element(By.TAG_NAME, 'body').text
+        if "You have successfully signed out" in body:
+          returnbutton = driver.find_element(By.XPATH, "//button[text()= 'Return']")
+          returnbutton.click()
+          WebDriverWait(driver, 10).until(lambda x: ("IBM" +b'\302\240'.decode('utf-8') + "Maximo") in driver.title)
 
-  if ("IBM") in driver.title:
-    body =driver.find_element(By.TAG_NAME, 'body').text
-    if 'Login Error' in body:
-      #print(body)
-      returnbutton = driver.find_element(By.XPATH, "//button[text()= 'Return']")
-      returnbutton.click()
-      measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': str(int(round(t_opened-t_opening,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': '-1'})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure':'-1'})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': '-1'})
-      with open('../intermediate/measurement.json','w') as fd:
-          json.dump(measurements, fd)
+          my_stats['loggedout'] = time.time()
+          measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': (int(round(my_stats['opened']-my_stats['opening'],3)*1000))})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': (int(round(my_stats['loggedin']-my_stats['loggingin'],3)*1000))})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure': (int(round(my_stats['loggedout']-my_stats['loggingout'],3)*1000))})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': (int(round(my_stats['loggedout']-my_stats['opening'],3)*1000))})
+          with open('../intermediate/measurement.json','w') as fd:
+              json.dump(measurements, fd)
+          #print(measurements)
 
-    else:
-      content = driver.find_element(By.CLASS_NAME,'messageDesc').text
-      #print(content)
-      measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': str(int(round(t_opened-t_opening,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': '-1'})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure':'-1'})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': '-1'})
-      with open('../intermediate/measurement.json','w') as fd:
-          json.dump(measurements, fd)
-
-  if ("Start Center") in driver.title:
-    t_loggedin = time.time()
-    assert "Start Center" in driver.title
-    logoutbutton = driver.find_element(By.ID, 'titlebar_hyperlink_8-lbsignout')
-    t_loggingout = time.time()
-    logoutbutton.click()
-    WebDriverWait(driver, 30).until(lambda x: any(t in x.title for t in ['IBM']))
-
-    body =driver.find_element(By.TAG_NAME, 'body').text
-    if "You have successfully signed out" in body:
-      t_loggedout = time.time()
-      measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': str(int(round(t_opened-t_opening,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': str(int(round(t_loggedin-t_loggingin,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure': str(int(round(t_loggedout-t_loggingout,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': str(int(round(t_loggedout-t_opening,3)*1000))})
-      with open('../intermediate/measurement.json','w') as fd:
-          json.dump(measurements, fd)
+        else:
+          print(driver.page_source)
+          measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': (int(round(my_stats['opened']-my_stats['opening'],3)*1000))})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': (int(round(my_stats['loggedin']-my_stats['loggingin'],3)*1000))})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure':-1})
+          measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': -1})
+          with open('../intermediate/measurement.json','w') as fd:
+              json.dump(measurements, fd)
       #print(measurements)
-
-    else:
-      measurements['_records'].append({'tag':domain_info.subdomain+'.open','measure': str(int(round(t_opened-t_opening,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingin','measure': str(int(round(t_loggedin-t_loggingin,3)*1000))})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.loggingout','measure':'-1'})
-      measurements['_records'].append({'tag':domain_info.subdomain+'.total','measure': '-1'})
-      with open('../intermediate/measurement.json','w') as fd:
-          json.dump(measurements, fd)
-  print(measurements)
-  driver.quit()
-
-except:
-  log_file = open("../audit/exception."+now_d+".log","a")
-  sys.stdout = log_file
-  print("%s" % (time.time()), flush=True)
-  print("Unexpected error: %s" % ( sys.exc_info()[0]), flush=True)
-  log_file.close()
-  raise
+      #print(my_stats)
+      driver.quit()
+    except:
+      log_file = open("../audit/exception."+now_d+".log","a")
+      sys.stdout = log_file
+      print("%s" % (time.time()), flush=True)
+      print("Unexpected error: %s" % ( sys.exc_info()[0]), flush=True)
+      log_file.close()
+      raise
+else:
+    print(driver.title)
+    driver.quit()
